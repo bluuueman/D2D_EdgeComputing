@@ -1,5 +1,6 @@
 package database
 
+//All functions are thread-safe
 import (
 	"fmt"
 	"raspberry/utility"
@@ -7,19 +8,25 @@ import (
 	"time"
 )
 
+//Service info on the server
 type Server struct {
+	//len has not been used in any other function yet
 	len     int
 	service map[string]string
 	lock    sync.RWMutex
 }
 
+//All available servers
 type ServerList struct {
+	//len has not been used in any other function yet
 	len    int
 	server map[string]*Server
 	lock   sync.RWMutex
 }
 
+//Servers' heartbeat info
 type ServerInfo struct {
+	//len has not been used in any other function yet
 	len      int
 	status   map[string]int64
 	priority map[string]int
@@ -29,6 +36,7 @@ type ServerInfo struct {
 var sl ServerList
 var si ServerInfo
 
+//Create a server data struct
 func InitServer() *Server {
 	s := new(Server)
 	service := make(map[string]string)
@@ -37,6 +45,7 @@ func InitServer() *Server {
 	return s
 }
 
+//Update service info on the server
 func UpdateService(server *Server, service string, port string) {
 	server.lock.Lock()
 	defer server.lock.Unlock()
@@ -47,6 +56,7 @@ func UpdateService(server *Server, service string, port string) {
 	}
 }
 
+//Delete service info on the server
 func DeletService(server *Server, service string) {
 	server.lock.Lock()
 	defer server.lock.Unlock()
@@ -57,6 +67,7 @@ func DeletService(server *Server, service string) {
 	}
 }
 
+//Find needed service on the server
 func SearchService(server *Server, service string) string {
 	server.lock.RLock()
 	defer server.lock.RUnlock()
@@ -76,13 +87,14 @@ func SearchService(server *Server, service string) string {
 
 
 ***********************************************************************************************************/
-
+//Init a server list
 func InitServerList() {
 	server := make(map[string]*Server)
 	sl.server = server
 	sl.len = 0
 }
 
+//Add server into serverlist
 func AddServer(ip string, pri int) *Server {
 	UpdataServerInfo(ip, pri)
 	sl.lock.Lock()
@@ -97,6 +109,7 @@ func AddServer(ip string, pri int) *Server {
 
 }
 
+//Delete server from serverlist
 func DeletServer(ip string) {
 	sl.lock.Lock()
 	defer sl.lock.Unlock()
@@ -107,6 +120,7 @@ func DeletServer(ip string) {
 	}
 }
 
+//Find server by ip
 func GetServer(ip string) *Server {
 	sl.lock.RLock()
 	defer sl.lock.RUnlock()
@@ -118,6 +132,7 @@ func GetServer(ip string) *Server {
 	}
 }
 
+//Print info
 func PrintServerlist() {
 	sl.lock.RLock()
 	defer sl.lock.RUnlock()
@@ -140,7 +155,7 @@ func PrintServerlist() {
 
 
 ***********************************************************************************************************/
-
+//Init
 func InitServerInfo() {
 	status := make(map[string]int64)
 	priority := make(map[string]int)
@@ -149,6 +164,7 @@ func InitServerInfo() {
 	si.status = status
 }
 
+//Update server heartbeat info
 func UpdataServerInfo(ip string, pri int) {
 	si.lock.Lock()
 	defer si.lock.Unlock()
@@ -157,6 +173,7 @@ func UpdataServerInfo(ip string, pri int) {
 	si.len = len(si.status)
 }
 
+//Print info
 func PrintServerInfo() {
 	si.lock.RLock()
 	defer si.lock.RUnlock()
@@ -179,7 +196,7 @@ func PrintServerInfo() {
 
 
 ***********************************************************************************************************/
-
+//Check heartbeat
 func CheckServerStatus() {
 	si.lock.Lock()
 	defer si.lock.Unlock()
@@ -205,6 +222,7 @@ func InitAll() {
 	InitJobInfo()
 }
 
+//Find the best server with the desired service
 func GetService(service string) [2]string {
 	si.lock.RLock()
 	serverlist := utility.Rank(si.priority)

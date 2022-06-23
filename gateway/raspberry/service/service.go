@@ -49,12 +49,16 @@ func PostServiceInfo(c *gin.Context) {
 		})
 		return
 	}
+	//check if the server already exist
 	server := database.GetServer(jsondata.IP)
 	if server == nil {
+		//if not exist create new server data struct
 		server = database.AddServer(jsondata.IP, jsondata.Priority)
 	}
+	//update all service info
 	for _, item := range jsondata.Data {
 		database.UpdateService(server, item.ServiceName, item.Port)
+		//check if there is any service can be offload
 		database.WakeJob(item.ServiceName)
 	}
 	fmt.Println("Recive a service register")
@@ -88,6 +92,7 @@ func PostServerInfo(c *gin.Context) {
 		})
 		return
 	}
+	//update heartbead
 	database.UpdataServerInfo(jsondata.IP, jsondata.Priority)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -95,7 +100,7 @@ func PostServerInfo(c *gin.Context) {
 	})
 }
 
-/*Add service you want gateway offload
+/*Add service you want gateway offload as a job
 * URL             ip:port/job
 * Method          POST
 * Content-Type    application/json
@@ -116,6 +121,7 @@ func PostJob(c *gin.Context) {
 		})
 		return
 	}
+	//start a thread to handle this job
 	database.StartJob(jsondata.ServiceName)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Job add",
@@ -143,6 +149,7 @@ func DeleteJob(c *gin.Context) {
 		})
 		return
 	}
+	//stop the thread that handle this job
 	database.StopJob(jsondata.ServiceName)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Job stop",
