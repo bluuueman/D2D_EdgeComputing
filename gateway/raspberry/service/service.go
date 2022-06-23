@@ -10,6 +10,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+/*Update server's service info
+* URL             ip:port/service
+* Method          POST
+* Content-Type    application/json
+* Body
+* {
+*     "ip":"192.168.0.1",
+*     "priority":4,
+*     "data":{
+*         "1":{
+*             "service":"s1",
+*             "port":"8080"
+*         },
+*         "2":{
+*             "service":"s2",
+*              "prot":"8088"
+*         }
+*     }
+* }
+*
+ */
 func PostServiceInfo(c *gin.Context) {
 	type Service struct {
 		ServiceName string `json:"service"`
@@ -44,6 +65,16 @@ func PostServiceInfo(c *gin.Context) {
 	})
 }
 
+/*Update server status as heartbeat
+* URL             ip:port/server
+* Method          POST
+* Content-Type    application/json
+* Body
+* {
+*     "ip":"192.168.0.1",
+*     "priority":4
+* }
+ */
 func PostServerInfo(c *gin.Context) {
 	type msg struct {
 		IP       string `json:"ip"`
@@ -64,6 +95,15 @@ func PostServerInfo(c *gin.Context) {
 	})
 }
 
+/*Add service you want gateway offload
+* URL             ip:port/job
+* Method          POST
+* Content-Type    application/json
+* Body
+* {
+*     "service":"service name"
+* }
+ */
 func PostJob(c *gin.Context) {
 	type msg struct {
 		ServiceName string `json:"service"`
@@ -82,6 +122,15 @@ func PostJob(c *gin.Context) {
 	})
 }
 
+/*Delete service you dont want gateway offload
+* URL             ip:port/server
+* Method          Delete
+* Content-Type    application/json
+* Body
+* {
+*     "service":"service name"
+* }
+ */
 func DeleteJob(c *gin.Context) {
 	type msg struct {
 		ServiceName string `json:"service"`
@@ -100,6 +149,15 @@ func DeleteJob(c *gin.Context) {
 	})
 }
 
+/*For test only :echo time
+* URL             ip:port/echotime
+* Method          POST
+* Content-Type    application/json
+* Body
+* {
+*     "type":"type name"
+* }
+ */
 func EchoTime(c *gin.Context) {
 	type msg struct {
 		Type string `json:"type"`
@@ -115,12 +173,22 @@ func EchoTime(c *gin.Context) {
 	fmt.Println("receive message")
 	fmt.Println(time.Now().UnixMilli())
 	c.JSON(http.StatusOK, gin.H{
-                "type": jsondata.Type,
+		"type":    jsondata.Type,
 		"message": time.Now().UnixMilli(),
 	})
 	return
 }
 
+/*For test only :receive offload request
+* URL             ip:port/echotime
+* Method          POST
+* Content-Type    application/json
+* Body
+* {
+*     "service":"service name",
+*     "port":"8080"
+* }
+ */
 func PostTest(c *gin.Context) {
 	type msg struct {
 		Service string `json:"service"`
