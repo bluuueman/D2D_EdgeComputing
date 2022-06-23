@@ -1,5 +1,6 @@
 package utility
 
+//General function
 import (
 	"bytes"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"sort"
 )
 
+//Check err and print it
 func IsErr(err error, msg string) bool {
 	if err != nil {
 		log.Println("ERROR: "+msg+"\n", err)
@@ -16,6 +18,7 @@ func IsErr(err error, msg string) bool {
 	return false
 }
 
+//Sort available servers and return the best
 func Rank(wordFrequencies map[string]int) []string {
 	pl := make(PairList, len(wordFrequencies))
 	i := 0
@@ -34,8 +37,9 @@ func Rank(wordFrequencies map[string]int) []string {
 	return result
 }
 
+//Notice the selected Server to start service
 func NoticeServer(ip string, service string, port string) {
-        //time.Sleep(time.Duration(2)*time.Second)
+
 	url := "http://" + ip + ":8081/start"
 
 	//json序列化
@@ -46,24 +50,24 @@ func NoticeServer(ip string, service string, port string) {
 	var jsonStr = []byte(post)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-        if err!=nil{
-                fmt.Println(err)
-                return
-        }
-	// req.Header.Set("X-Custom-Header", "myvalue")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-                return
+		return
 	}
 	defer resp.Body.Close()
 	fmt.Println("status", resp.Status)
 	return
 }
 
+//Data struct for sort
 type Pair struct {
 	Key   string
 	Value int
