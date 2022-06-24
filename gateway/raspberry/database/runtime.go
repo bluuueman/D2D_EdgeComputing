@@ -9,14 +9,19 @@ import (
 var cmd chan [2]string
 
 type JobInfo struct {
+	//key is service name
+	//channel to change job selecting thread status
 	channel map[string](chan int)
-	status  map[string]int
-	ip      map[string][]string
-	lock    sync.RWMutex
+	//0 pending 1 selecting 2 running 3 stop
+	status map[string]int
+	//ip of the server that service offloading to
+	ip   map[string][]string
+	lock sync.RWMutex
 }
 
 var ji JobInfo
 
+//Init jobinfo data struct
 func InitJobInfo() {
 	channel := make(map[string](chan int))
 	status := make(map[string]int)
@@ -26,11 +31,13 @@ func InitJobInfo() {
 	ji.ip = ip
 }
 
+//Add job you want the gateway to offload
 func AddJob(service string) int {
 	ji.lock.Lock()
 	defer ji.lock.Unlock()
 	_, exist := ji.status[service]
 	if !exist {
+		//after add it to jobinfo, start thread then change job status to 1(selecting)
 		ch := make(chan int)
 		ji.channel[service] = ch
 		ji.status[service] = 1
@@ -39,6 +46,7 @@ func AddJob(service string) int {
 	return 0
 }
 
+//After a needed service has been registered, change job status to 1(selecting)
 func WakeJob(service string) {
 	ji.lock.Lock()
 	defer ji.lock.Unlock()
@@ -57,9 +65,11 @@ func PrintJobStatus() {
 	}
 }
 
+//Check all available server heartbeat
 func KeepAliveAll() {
 	for {
 		fmt.Println("check server")
+		//if timestamp outdate, delete server info and service info
 		CheckServerStatus()
 		PrintServerInfo()
 		PrintServerlist()
@@ -68,6 +78,7 @@ func KeepAliveAll() {
 	}
 }
 
+//Check runing server heartbeat
 func KeepAliveService() {
 	for {
 		ji.lock.Lock()
@@ -75,9 +86,10 @@ func KeepAliveService() {
 		checked := make(map[string]int)
 		for service, status := range ji.status {
 			fmt.Println(service, " ", status)
+			//if the job has been stoped, wake the thread
 			if status == 3 {
 				ji.channel[service] <- 0
-			} else if status == 2 {
+			} else if status == 2 { //if the job is runing check all server heartbeat
 				si.lock.RLock()
 				now := time.Now().Unix()
 				for _, ip := range ji.ip[service] {
@@ -91,14 +103,12 @@ func KeepAliveService() {
 							ji.channel[service] <- 1
 							break
 						}
-
 					}
 					if now-si.status[ip] > 4 {
-
 						si.priority[ip] = -1
 						ji.status[service] = 1
 						ji.channel[service] <- 1
-						fmt.Println(service, " seleting")
+						//fmt.Println(service, " seleting")
 					} else {
 						checked[ip] = 1
 					}
@@ -112,10 +122,12 @@ func KeepAliveService() {
 	}
 }
 
+//Thread to monitor job status, need to be waked after job status change to 1 or 3
 func SelectServer(service string, ch chan int) {
 	for {
 		ji.lock.Lock()
 		if ji.status[service] == 3 {
+			//if job is stoped, remove it data
 			delete(ji.channel, service)
 			delete(ji.status, service)
 			delete(ji.ip, service)
@@ -124,15 +136,18 @@ func SelectServer(service string, ch chan int) {
 			ji.lock.Unlock()
 			return
 		} else {
+			//try to find available server
 			result := GetService(service)
 			ji.ip[service] = []string{}
 			//PrintServerlist()
+			//if find one, change status to 2(running)
 			if result[0] != "" {
 				//fmt.Println(service, " runing")
 				ji.status[service] = 2
 				ji.ip[service] = append(ji.ip[service], result[0])
 				//updat timestamp here
 			} else {
+				//if not, change status to pending
 				//fmt.Println(service, " pending")
 				ji.status[service] = 0
 			}
@@ -144,6 +159,7 @@ func SelectServer(service string, ch chan int) {
 
 }
 
+//Start job selecting thread
 func StartJob(service string) {
 	ji.lock.Lock()
 	defer ji.lock.Unlock()
@@ -152,11 +168,13 @@ func StartJob(service string) {
 		ji.status[service] = 1
 		ch := make(chan int, 2)
 		ji.channel[service] = ch
+		//start selecting thread to monitor job status
 		go SelectServer(service, ch)
 	}
 
 }
 
+//Delete job gateway want to offload
 func StopJob(service string) {
 	ji.lock.Lock()
 	defer ji.lock.Unlock()
@@ -166,6 +184,7 @@ func StopJob(service string) {
 	}
 }
 
+//not used
 func MainRuntime() {
 	run := "run"
 	stop := "stop"
