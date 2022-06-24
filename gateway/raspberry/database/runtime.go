@@ -11,7 +11,7 @@ var cmd chan [2]string
 type JobInfo struct {
 	channel map[string](chan int)
 	status  map[string]int
-	ip      map[string]string
+	ip      map[string][]string
 	lock    sync.RWMutex
 }
 
@@ -20,7 +20,7 @@ var ji JobInfo
 func InitJobInfo() {
 	channel := make(map[string](chan int))
 	status := make(map[string]int)
-	ip := make(map[string]string)
+	ip := make(map[string][]string)
 	ji.channel = channel
 	ji.status = status
 	ji.ip = ip
@@ -61,9 +61,9 @@ func KeepAliveAll() {
 	for {
 		fmt.Println("check server")
 		CheckServerStatus()
-		//PrintServerInfo()
-		//PrintServerlist()
-		//fmt.Println()
+		PrintServerInfo()
+		PrintServerlist()
+		fmt.Println()
 		time.Sleep(time.Duration(10) * time.Second)
 	}
 }
@@ -72,24 +72,41 @@ func KeepAliveService() {
 	for {
 		ji.lock.Lock()
 		fmt.Println("check Joblist")
+		checked := make(map[string]int)
 		for service, status := range ji.status {
-			//fmt.Println(service, " ", status)
+			fmt.Println(service, " ", status)
 			if status == 3 {
 				ji.channel[service] <- 0
 			} else if status == 2 {
 				si.lock.RLock()
 				now := time.Now().Unix()
-				ip := ji.ip[service]
-				if now-si.status[ip] > 4 {
-					si.priority[ip] = 0
-					ji.status[service] = 1
-					ji.channel[service] <- 1
-					//fmt.Println(service, " seleting")
+				for _, ip := range ji.ip[service] {
+					_, exist := checked[ip]
+					if exist {
+						if checked[ip] == 1 {
+							break
+						} else {
+							si.priority[ip] = 0
+							ji.status[service] = 1
+							ji.channel[service] <- 1
+							break
+						}
+
+					}
+					if now-si.status[ip] > 4 {
+
+						si.priority[ip] = -1
+						ji.status[service] = 1
+						ji.channel[service] <- 1
+						fmt.Println(service, " seleting")
+					} else {
+						checked[ip] = 1
+					}
 				}
 				si.lock.RUnlock()
 			}
 		}
-		//fmt.Println()
+		fmt.Println()
 		ji.lock.Unlock()
 		time.Sleep(time.Duration(4) * time.Second)
 	}
@@ -108,11 +125,12 @@ func SelectServer(service string, ch chan int) {
 			return
 		} else {
 			result := GetService(service)
+			ji.ip[service] = []string{}
 			//PrintServerlist()
 			if result[0] != "" {
 				//fmt.Println(service, " runing")
 				ji.status[service] = 2
-				ji.ip[service] = result[0]
+				ji.ip[service] = append(ji.ip[service], result[0])
 				//updat timestamp here
 			} else {
 				//fmt.Println(service, " pending")

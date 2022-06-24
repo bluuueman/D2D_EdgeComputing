@@ -227,10 +227,14 @@ func GetService(service string) [2]string {
 	si.lock.RLock()
 	serverlist := utility.Rank(si.priority)
 	fmt.Println(serverlist)
-	si.lock.RUnlock()
+	defer si.lock.RUnlock()
 	sl.lock.RLock()
 	defer sl.lock.RUnlock()
 	for _, ip := range serverlist {
+		if si.priority[ip] < 0 {
+			result := [2]string{"", ""}
+			return result
+		}
 		server, exist := sl.server[ip]
 		if exist {
 			port := SearchService(server, service)
