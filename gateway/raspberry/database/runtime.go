@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"raspberry/stream"
 	"sync"
 	"time"
 )
@@ -124,9 +125,14 @@ func KeepAliveService() {
 
 //Thread to monitor job status, need to be waked after job status change to 1 or 3
 func SelectServer(service string, ch chan int) {
+	var run *bool
+	run = nil
 	for {
 		ji.lock.Lock()
 		if ji.status[service] == 3 {
+			if run != nil {
+				*run = false
+			}
 			//if job is stoped, remove it data
 			delete(ji.channel, service)
 			delete(ji.status, service)
@@ -136,15 +142,22 @@ func SelectServer(service string, ch chan int) {
 			ji.lock.Unlock()
 			return
 		} else {
+			if run != nil {
+				*run = false
+			}
 			//try to find available server
 			result := GetService(service)
 			ji.ip[service] = []string{}
 			//PrintServerlist()
 			//if find one, change status to 2(running)
 			if result[0] != "" {
+				run = new(bool)
+				*run = true
 				//fmt.Println(service, " runing")
 				ji.status[service] = 2
 				ji.ip[service] = append(ji.ip[service], result[0])
+				url := "http://192.168.0.168:5002/detect"
+				go stream.Streamer(url, 300*time.Millisecond, run)
 				//updat timestamp here
 			} else {
 				//if not, change status to pending
