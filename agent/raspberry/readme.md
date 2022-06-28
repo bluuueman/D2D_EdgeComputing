@@ -1,1 +1,1 @@
-# Server for Raspberry pi
+# agent for Raspberry pi
