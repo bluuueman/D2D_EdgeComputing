@@ -38,13 +38,12 @@ func Rank(wordFrequencies map[string]int) []string {
 }
 
 //Notice the selected Server to start service
-func NoticeServer(ip string, service string, port string) {
+func NoticeServer(ip string, service string) {
 
-	url := "http://" + ip + ":8081/start"
+	url := "http://" + ip + ":8000/start"
 
 	//json序列化
 	post := "{\"service\":\"" + service +
-		"\",\"port\":\"" + port +
 		"\"}"
 
 	var jsonStr = []byte(post)

@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"raspberry/stream"
+	"raspberry/utility"
 	"sync"
 	"time"
 )
@@ -155,6 +156,7 @@ func SelectServer(service string, ch chan int) {
 				*run = true
 				//fmt.Println(service, " runing")
 				ji.status[service] = 2
+				go utility.NoticeServer(ji.ip[service][0], service)
 				ji.ip[service] = append(ji.ip[service], result[0])
 				url := "http://192.168.0.168:5002/detect"
 				go stream.Streamer(url, 300*time.Millisecond, run)

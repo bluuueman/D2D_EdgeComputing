@@ -9,10 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func PostTest(c *gin.Context) {
+func Start(c *gin.Context) {
 	type msg struct {
 		Service string `json:"service"`
-		Port    string `json:"port"`
 	}
 	jsondata := msg{}
 	bindErr := c.BindJSON(&jsondata)
@@ -24,7 +23,7 @@ func PostTest(c *gin.Context) {
 	}
 	fmt.Println("receive message")
 	fmt.Println(time.Now().UnixMilli())
-	utility.StartService("192.168.0.168:8080", "1234")
+	utility.StartService(jsondata.Service)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Message receive",
 	})

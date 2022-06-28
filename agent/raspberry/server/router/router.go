@@ -8,6 +8,6 @@ import (
 
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
-	router.POST("/postTest", service.PostTest)
+	router.POST("/start", service.Start)
 	return router
 }

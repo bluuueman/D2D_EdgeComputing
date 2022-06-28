@@ -80,7 +80,7 @@ func WriteMessage(conn net.Conn, msg string) (int, error) {
 	return conn.Write(buf.Bytes())
 }
 
-func StartService(url string, port string) {
+func StartService(service string) {
 	/*
 		conn, err := net.Dial("tcp", "127.0.0.1:"+port)
 		IsErr(err, "Connect Service Failed")
@@ -89,6 +89,6 @@ func StartService(url string, port string) {
 		_, w_err := WriteMessage(conn, url)
 		IsErr(w_err, "Write Failed")
 	*/
-	fmt.Println("Start service....." + url + ":" + port)
+	fmt.Println("Start service:" + service)
 
 }
