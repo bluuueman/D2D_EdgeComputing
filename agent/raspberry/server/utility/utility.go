@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"server/database"
 	"strconv"
 	"time"
 )
@@ -30,7 +31,11 @@ func HttpSend(url string, data string) {
 	defer resp.Body.Close()
 	fmt.Println("status", resp.Status)
 }
-func RegisterService(desIp string, srcIp string, service string, priority int) {
+func RegisterService() {
+	desIp := database.GetGatewayIP()
+	srcIp := database.GetLocalIP()
+	service := GetService(database.GetService())
+	priority := 3
 	time.Sleep(time.Duration(3) * time.Second)
 	url := "http://" + desIp + ":8080/service"
 	//json序列化
@@ -49,10 +54,17 @@ func HeartBeat(desIp string, srcIp string, priority int) {
 		"\"}"
 	HttpSend(url, data)
 }
-func SendHeartBeat(desIp string, srcIp string) {
+func SendHeartBeat() {
+	desIp := database.GetGatewayIP()
+	srcIp := database.GetLocalIP()
 	for {
 		time.Sleep(time.Duration(3) * time.Second)
-		HeartBeat(desIp, srcIp, 3)
+		if database.IsRun() {
+			HeartBeat(desIp, srcIp, 3)
+		} else {
+			break
+		}
+
 	}
 }
 func GetService(services map[string]string) string {
