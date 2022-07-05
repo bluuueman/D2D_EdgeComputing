@@ -64,7 +64,6 @@ func SendHeartBeat() {
 		} else {
 			break
 		}
-
 	}
 }
 func GetService(services map[string]string) string {
