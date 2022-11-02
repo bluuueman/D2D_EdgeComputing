@@ -15,12 +15,75 @@ import (
 	"github.com/vladimirvivien/go4vl/v4l2"
 )
 
+type Task struct {
+	frame []uint8
+	url   string
+}
+
+var blockQueue chan Task //blocking queue for threadpool
+var running bool         //threadpool's state
+
 var frames <-chan []uint8
 var stopStream context.CancelFunc
 var camera *device.Device
+var client http.Client
 
+//init http client
+func initClient() {
+	client = http.Client{}
+}
+
+//init blockQueue
+func initQueue() {
+	blockQueue = make(chan Task, 50)
+}
+
+//init camera
+func initDevice() {
+	devName := "/dev/video0"
+	flag.StringVar(&devName, "d", devName, "device name (path)")
+	flag.Parse()
+
+	// open device
+	device, err := device.Open(
+		devName,
+		device.WithPixFormat(v4l2.PixFormat{PixelFormat: v4l2.PixelFmtMPEG, Width: 1920, Height: 1080}),
+	)
+	camera = device
+	if err != nil {
+		log.Fatalf("failed to open device: %s", err)
+	}
+}
+
+//init
+func InitStream() {
+	initClient()
+	initQueue()
+	/*
+		initDevice()
+		ctx, stop := context.WithCancel(context.TODO())
+		if err := camera.Start(ctx); err != nil {
+			log.Fatalf("failed to start stream: %s", err)
+		}
+		frames = camera.GetOutput()
+		stopStream = stop
+	*/
+}
+
+func PushQueue(frame []uint8, url string) {
+	var task Task
+	task.frame = frame
+	task.url = url
+	blockQueue <- task
+}
+
+/*Send pic to certain url
+*
+*
+*
+*
+ */
 func send(frame []uint8, url string) {
-	client := http.Client{}
 	bodyBuf := &bytes.Buffer{}
 	bodyWrite := multipart.NewWriter(bodyBuf)
 	// file 为key
@@ -51,19 +114,25 @@ func send(frame []uint8, url string) {
 	defer resp.Body.Close()
 }
 
-func initDevice() {
-	devName := "/dev/video0"
-	flag.StringVar(&devName, "d", devName, "device name (path)")
-	flag.Parse()
-
-	// open device
-	device, err := device.Open(
-		devName,
-		device.WithPixFormat(v4l2.PixFormat{PixelFormat: v4l2.PixelFmtMPEG, Width: 1920, Height: 1080}),
-	)
-	camera = device
-	if err != nil {
-		log.Fatalf("failed to open device: %s", err)
+/*Worker threads using for sending request
+* the number of worker depend on the CPU's thread number
+*
+*
+*
+*
+*
+*
+*
+*
+*
+ */
+func worker() {
+	for {
+		if !running {
+			break
+		}
+		task := <-blockQueue
+		send(task.frame, task.url)
 	}
 }
 
@@ -76,16 +145,6 @@ func Streamer(url string, interval time.Duration, run *bool) {
 		time.Sleep(interval)
 	}
 	fmt.Println("exit")
-}
-
-func InitStream() {
-	initDevice()
-	ctx, stop := context.WithCancel(context.TODO())
-	if err := camera.Start(ctx); err != nil {
-		log.Fatalf("failed to start stream: %s", err)
-	}
-	frames = camera.GetOutput()
-	stopStream = stop
 }
 
 func StopStream() {

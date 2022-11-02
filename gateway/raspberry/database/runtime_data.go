@@ -198,36 +198,3 @@ func StopJob(service string) {
 		ji.status[service] = 3
 	}
 }
-
-//not used
-func MainRuntime() {
-	run := "run"
-	stop := "stop"
-	for {
-		cmd := <-cmd
-		opt := cmd[0]
-		target := cmd[1]
-		switch opt {
-		case run:
-			ji.lock.Lock()
-			_, exist := ji.status[target]
-			if !exist {
-				ji.status[target] = 1
-				ch := make(chan int)
-				ji.channel[target] = ch
-				go SelectServer(target, ch)
-			}
-			ji.lock.Unlock()
-		case stop:
-			ji.lock.Lock()
-			_, exist := ji.status[target]
-			if exist {
-				ji.status[target] = 3
-			}
-			ji.lock.Unlock()
-		default:
-			fmt.Println("wrong cmd")
-		}
-	}
-
-}

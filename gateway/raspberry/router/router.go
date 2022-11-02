@@ -14,5 +14,6 @@ func SetupRouter() *gin.Engine {
 	router.DELETE("/job", service.DeleteJob)
 	router.POST("/echoTime", service.EchoTime)
 	router.POST("/postTest", service.PostTest)
+	router.POST("/task", service.SendRuest)
 	return router
 }

@@ -80,12 +80,10 @@ func SearchService(server *Server, service string) string {
 }
 
 /***********************************************************************************************************
-
-
-
-
-
-
+*
+*Code For ServerList,Server
+*Init, Delete, Get, Pirnt
+*
 ***********************************************************************************************************/
 //Init a server list
 func InitServerList() {
@@ -148,12 +146,10 @@ func PrintServerlist() {
 }
 
 /***********************************************************************************************************
-
-
-
-
-
-
+*
+*Code For ServerInfo data struct
+*Init, Update, Print
+*
 ***********************************************************************************************************/
 //Init
 func InitServerInfo() {
@@ -189,12 +185,10 @@ func PrintServerInfo() {
 }
 
 /***********************************************************************************************************
-
-
-
-
-
-
+*
+*Code For Keepalive
+*Check and Delete inactive server
+*
 ***********************************************************************************************************/
 //Check heartbeat
 func CheckServerStatus() {
@@ -212,17 +206,13 @@ func CheckServerStatus() {
 	}
 }
 
-func CheckServiceServer(ip string) {
-
-}
-
 func InitAll() {
 	InitServerList()
 	InitServerInfo()
 	InitJobInfo()
 }
 
-//Find the best server with the desired service
+//Find the best server with the desired service(for test)
 func GetService(service string) [2]string {
 	si.lock.RLock()
 	serverlist := utility.Rank(si.priority)

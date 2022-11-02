@@ -2,8 +2,10 @@ package service
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"raspberry/database"
+	"raspberry/stream"
 	"raspberry/utility"
 	"time"
 
@@ -154,6 +156,23 @@ func DeleteJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Job stop",
 	})
+}
+
+func SendRuest(c *gin.Context) {
+
+	file, err := c.FormFile("task")
+	if utility.IsErr(err, "Read task Failed!") {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Can not find task",
+		})
+		return
+	}
+	url, _ := c.GetPostForm("url")
+	fileContent, _ := file.Open()
+	frame, _ := ioutil.ReadAll(fileContent)
+
+	stream.PushQueue(frame, url)
+	fmt.Println(time.Now().UnixMilli())
 }
 
 /*For test only :echo time
